@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Jobs\SendPostNotifications;
 use App\Models\Post;
+use App\Models\PostNotification;
 use Illuminate\Console\Command;
 
 class WebsitesNotifySubscribers extends Command
@@ -29,21 +30,27 @@ class WebsitesNotifySubscribers extends Command
     {
         $this->info('Search all the unsent posts...');
 
-        $unsentPosts = Post::where('sent', false)->with('website')->cursor();
-
         $processed = 0;
-        foreach ($unsentPosts as $post) {
-            SendPostNotifications::dispatch($post);
-            $this->info("Queued notifications for: '{$post->title}' → {$post->website->name}");
-            $processed++;
-        }
 
-        $this->newLine();
-        if ($processed > 0) {
-            $this->info("Success! Queued notifications for {$processed} new posts.");
-        } else {
-            $this->info("No new posts found. All websites up to date!");
-        }
+        Post::whereDoesntHave('notifications')
+            ->orWhereHas('pendingNotifications')
+            ->cursor()
+            ->each(function ($post) use (&$processed) {
+                $post->website->subscribers()->chunkById(1000, function ($subscribers) use ($post) {
+                    foreach ($subscribers as $subscriber) {
+                        PostNotification::firstOrCreate([
+                            'post_id' => $post->id,
+                            'subscriber_id' => $subscriber->id,
+                        ]);
+                    }
+                });
+
+                $this->info("Queued notifications for: '{$post->title}' → {$post->website->name}");
+                SendPostNotifications::dispatch($post);
+                $processed++;
+            });
+
+        $this->info("Processed {$processed} posts!");
 
         return self::SUCCESS;
     }

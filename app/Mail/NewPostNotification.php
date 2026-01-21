@@ -4,7 +4,6 @@ namespace App\Mail;
 
 use App\Models\Post;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
@@ -42,7 +41,7 @@ class NewPostNotification extends Mailable
         return new Content(
             view: 'mail.new-post',
             with: [
-                'post' => $this->post
+                'post' => $this->post,
             ],
         );
     }

@@ -4,8 +4,7 @@ namespace App\Jobs;
 
 use App\Mail\NewPostNotification;
 use App\Models\Post;
-use App\Models\Subscriber;
-use App\Models\Subscription;
+use App\Models\PostNotification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Mail;
@@ -29,19 +28,14 @@ class SendPostNotifications implements ShouldQueue
      */
     public function handle(): void
     {
-        $subscribers = Subscription::where('website_id', $this->post->website_id)
-            ->with('subscribers')
-            ->pluck('subscriber_id')
-            ->toArray();
+        PostNotification::with('subscriber')->where('post_id', $this->post->id)
+            ->whereNull('sent_at')
+            ->chunkById(500, function ($notifications) {
+                foreach ($notifications as $notification) {
+                    Mail::to($notification->subscriber->email)->queue(new NewPostNotification($this->post));
 
-        // Process in chunks
-        Subscriber::whereIn('id', $subscribers)
-            ->chunkById(100, function ($users) {
-                foreach ($users as $subscriber) {
-                    Mail::to($subscriber->email)->queue(new NewPostNotification($this->post));
+                    $notification->update(['sent_at' => now()]);
                 }
             });
-
-        $this->post->update(['sent' => true, 'sent_at' => now()]);
     }
 }

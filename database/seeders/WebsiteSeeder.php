@@ -17,23 +17,23 @@ class WebsiteSeeder extends Seeder
             [
                 'name' => 'Laravel Daily',
                 'slug' => 'laravel-daily',
-                'email' => 'news@laraveldaily.com'
+                'email' => 'news@laraveldaily.com',
             ],
             [
                 'name' => 'PHP Weekly',
                 'slug' => 'php-weekly',
-                'email' => 'tips@phpweekly.com'
+                'email' => 'tips@phpweekly.com',
             ],
             [
                 'name' => 'DevOps Digest',
                 'slug' => 'devops-digest',
-                'email' => 'info@devopsdigest.com'
+                'email' => 'info@devopsdigest.com',
             ],
             [
                 'name' => 'API Demo',
                 'slug' => 'api-demo',
-                'email' => 'hello@apidemo.com'
-            ]
+                'email' => 'hello@apidemo.com',
+            ],
         ];
 
         foreach ($websites as $websiteData) {

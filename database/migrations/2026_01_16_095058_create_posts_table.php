@@ -16,8 +16,6 @@ return new class extends Migration
             $table->foreignId('website_id')->constrained()->onDelete('cascade');
             $table->string('title');
             $table->text('description');
-            $table->boolean('sent')->default(false);
-            $table->timestamp('sent_at')->nullable();
             $table->timestamps();
         });
     }

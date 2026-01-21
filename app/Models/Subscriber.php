@@ -16,4 +16,9 @@ class Subscriber extends Model
     {
         return $this->hasMany(Subscription::class);
     }
+
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(PostNotification::class);
+    }
 }

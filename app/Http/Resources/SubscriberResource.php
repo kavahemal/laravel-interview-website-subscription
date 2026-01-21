@@ -23,9 +23,10 @@ class SubscriberResource extends JsonResource
                 return $this->subscriptions->map(function ($subscription) {
                     return [
                         'id' => $subscription->website_id,
-                        'name' => $subscription->website->name
+                        'name' => $subscription->website->name,
                     ];
                 });
+
                 return $this->subscriptions->map->only(['website_id', 'website']);
             }),
         ];

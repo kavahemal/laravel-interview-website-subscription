@@ -6,7 +6,6 @@ use App\Models\Subscriber;
 use App\Models\Subscription;
 use App\Models\Website;
 use Faker\Factory;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class SubscriberSeeder extends Seeder
@@ -28,7 +27,7 @@ class SubscriberSeeder extends Seeder
             foreach ($websiteIds as $websiteId) {
                 Subscription::firstOrCreate([
                     'subscriber_id' => $subscriber->id,
-                    'website_id' => $websiteId
+                    'website_id' => $websiteId,
                 ]);
             }
         }
