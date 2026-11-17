@@ -8,11 +8,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Post extends Model
 {
-    protected $guarded = [];
+    protected $fillable = ['website_id', 'title', 'description'];
 
     protected $casts = [
-        'sent' => 'boolean',
-        'sent_at' => 'datetime',
+        'notified_at' => 'datetime',
     ];
 
     public function website(): BelongsTo
@@ -27,6 +26,8 @@ class Post extends Model
 
     public function pendingNotifications(): HasMany
     {
-        return $this->hasMany(PostNotification::class)->whereNull('sent_at');
+        return $this->hasMany(PostNotification::class)
+            ->whereNull('sent_at')
+            ->whereNull('queued_at');
     }
 }

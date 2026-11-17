@@ -126,17 +126,11 @@
               "value": "test@test.com",
               "type": "text",
               "uuid": "6c6997d7-a229-46e5-81f2-b3b32600e2e2"
-            },
-            {
-              "key": "website_id",
-              "value": "1",
-              "type": "text",
-              "uuid": "d8c95acb-b1c1-4db0-be2e-9b98bd78bd8a"
             }
           ]
         },
         "url": {
-          "raw": "http://127.0.0.1:8000/api/subscribe",
+          "raw": "http://127.0.0.1:8000/api/websites/1/subscribe",
           "protocol": "http",
           "host": [
             "127",
@@ -147,6 +141,8 @@
           "port": "8000",
           "path": [
             "api",
+            "websites",
+            "1",
             "subscribe"
           ]
         }

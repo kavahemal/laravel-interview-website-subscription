@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\SubscriberResource;
 use App\Models\Subscriber;
 use App\Models\Subscription;
+use App\Models\Website;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class SubscriptionController extends Controller
 {
@@ -20,23 +22,26 @@ class SubscriptionController extends Controller
         return SubscriberResource::collection($subscribers);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, Website $website)
     {
-        $request->validate([
-            'email' => 'required|email|unique:subscribers,email',
+        $validated = $request->validate([
+            'email' => 'required|email|max:255',
             'name' => 'nullable|string|max:255',
-            'website_id' => 'required|exists:websites,id',
         ]);
 
         $subscriber = Subscriber::firstOrCreate(
-            ['email' => $request->email],
-            ['name' => $request->name]
+            ['email' => Str::lower($validated['email'])],
+            ['name' => $validated['name'] ?? null]
         );
 
-        Subscription::firstOrCreate(
-            ['subscriber_id' => $subscriber->id, 'website_id' => $request->website_id],
-            []
-        );
+        $subscription = Subscription::firstOrCreate([
+            'subscriber_id' => $subscriber->id,
+            'website_id' => $website->id,
+        ]);
+
+        if (! $subscription->wasRecentlyCreated) {
+            return response()->json(['message' => 'Already subscribed to this website.'], 409);
+        }
 
         return response()->json(['message' => 'Subscribed successfully'], 201);
     }

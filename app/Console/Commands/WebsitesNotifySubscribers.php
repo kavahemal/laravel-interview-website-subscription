@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Jobs\SendPostNotifications;
 use App\Models\Post;
 use App\Models\PostNotification;
+use App\Models\Subscription;
 use Illuminate\Console\Command;
 
 class WebsitesNotifySubscribers extends Command
@@ -32,26 +33,58 @@ class WebsitesNotifySubscribers extends Command
 
         $processed = 0;
 
-        Post::whereDoesntHave('notifications')
+        Post::whereNull('notified_at')
             ->orWhereHas('pendingNotifications')
+            ->with('website')
             ->cursor()
             ->each(function ($post) use (&$processed) {
-                $post->website->subscribers()->chunkById(1000, function ($subscribers) use ($post) {
-                    foreach ($subscribers as $subscriber) {
-                        PostNotification::firstOrCreate([
-                            'post_id' => $post->id,
-                            'subscriber_id' => $subscriber->id,
-                        ]);
-                    }
-                });
+                Subscription::where('website_id', $post->website_id)
+                    ->where('created_at', '<=', $post->created_at)
+                    ->select(['id', 'subscriber_id'])
+                    ->chunkById(1000, function ($subscriptions) use ($post) {
+                        $now = now();
 
-                $this->info("Queued notifications for: '{$post->title}' → {$post->website->name}");
-                SendPostNotifications::dispatch($post);
+                        PostNotification::insertOrIgnore($subscriptions->map(fn ($subscription) => [
+                            'post_id' => $post->id,
+                            'subscriber_id' => $subscription->subscriber_id,
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ])->all());
+                    });
+
+                $post->forceFill(['notified_at' => now()])->save();
+
+                $queued = $this->dispatchPending($post);
+
+                $this->info("Queued {$queued} notifications for: '{$post->title}' → {$post->website->name}");
                 $processed++;
             });
 
         $this->info("Processed {$processed} posts!");
 
         return self::SUCCESS;
+    }
+
+    private function dispatchPending(Post $post): int
+    {
+        $queued = 0;
+
+        $post->pendingNotifications()
+            ->select('id')
+            ->chunkById(1000, function ($notifications) use (&$queued) {
+                $ids = $notifications->modelKeys();
+
+                foreach ($ids as $id) {
+                    SendPostNotifications::dispatch($id);
+                }
+
+                PostNotification::whereKey($ids)
+                    ->whereNull('sent_at')
+                    ->update(['queued_at' => now()]);
+
+                $queued += count($ids);
+            });
+
+        return $queued;
     }
 }

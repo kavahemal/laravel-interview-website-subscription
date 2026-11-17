@@ -6,7 +6,7 @@ use App\Http\Controllers\Api\WebsiteController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/posts', [PostController::class, 'store']);
-Route::post('/subscribe', [SubscriptionController::class, 'store']);
+Route::post('/websites/{website}/subscribe', [SubscriptionController::class, 'store']);
 
 Route::get('/websites', [WebsiteController::class, 'index']);
 Route::get('/subscribers', [SubscriptionController::class, 'index']);

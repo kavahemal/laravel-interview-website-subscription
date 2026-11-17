@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('post_id')->constrained()->cascadeOnDelete();
             $table->foreignId('subscriber_id')->constrained()->cascadeOnDelete();
+            $table->timestamp('queued_at')->nullable()->index();
             $table->timestamp('sent_at')->nullable()->index();
             $table->unique(['post_id', 'subscriber_id']);
             $table->timestamps();

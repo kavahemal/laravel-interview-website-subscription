@@ -11,13 +11,13 @@ class PostController extends Controller
 {
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'website_id' => 'required|exists:websites,id',
             'title' => 'required|string|max:255',
             'description' => 'required|string|max:1000',
         ]);
 
-        $post = Post::create($request->all());
+        $post = Post::create($validated);
 
         return new PostResource($post);
     }

@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('website_id')->constrained()->onDelete('cascade');
             $table->string('title');
             $table->text('description');
+            $table->timestamp('notified_at')->nullable()->index();
             $table->timestamps();
         });
     }

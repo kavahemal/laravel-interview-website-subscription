@@ -3,39 +3,50 @@
 namespace App\Jobs;
 
 use App\Mail\NewPostNotification;
-use App\Models\Post;
 use App\Models\PostNotification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Mail;
+use Throwable;
 
 class SendPostNotifications implements ShouldQueue
 {
     use Queueable;
 
-    public $post;
+    public int $tries = 3;
 
-    /**
-     * Create a new job instance.
-     */
-    public function __construct(Post $post)
-    {
-        $this->post = $post;
-    }
+    public array $backoff = [10, 60];
 
-    /**
-     * Execute the job.
-     */
+    public function __construct(public int $notificationId) {}
+
     public function handle(): void
     {
-        PostNotification::with('subscriber')->where('post_id', $this->post->id)
+        // Atomic claim: only one worker can set sent_at, so a row is never sent twice.
+        $claimed = PostNotification::whereKey($this->notificationId)
             ->whereNull('sent_at')
-            ->chunkById(500, function ($notifications) {
-                foreach ($notifications as $notification) {
-                    Mail::to($notification->subscriber->email)->queue(new NewPostNotification($this->post));
+            ->update(['sent_at' => now()]);
 
-                    $notification->update(['sent_at' => now()]);
-                }
-            });
+        if ($claimed === 0) {
+            return;
+        }
+
+        $notification = PostNotification::with(['post.website', 'subscriber'])->find($this->notificationId);
+
+        try {
+            Mail::to($notification->subscriber->email)
+                ->send(new NewPostNotification($notification->post));
+        } catch (Throwable $e) {
+            PostNotification::whereKey($this->notificationId)->update(['sent_at' => null]);
+
+            throw $e;
+        }
+    }
+
+    public function failed(?Throwable $e): void
+    {
+        // Let the next command run pick it up again.
+        PostNotification::whereKey($this->notificationId)
+            ->whereNull('sent_at')
+            ->update(['queued_at' => null]);
     }
 }

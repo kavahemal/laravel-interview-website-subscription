@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Website extends Model
 {
@@ -20,8 +20,8 @@ class Website extends Model
         return $this->hasMany(Subscription::class);
     }
 
-    public function subscribers(): HasManyThrough
+    public function subscribers(): BelongsToMany
     {
-        return $this->hasManyThrough(Subscriber::class, Subscription::class);
+        return $this->belongsToMany(Subscriber::class, 'subscriptions')->withTimestamps();
     }
 }
